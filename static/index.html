@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Conversor PDF para PDF/A</title>
+  <title>Conversor de Arquivos</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,281 +12,359 @@
       background: #f0f2f5;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 2rem 1.5rem;
     }
 
     .card {
       background: #fff;
       border-radius: 1rem;
       box-shadow: 0 4px 24px rgba(0,0,0,.08);
-      padding: 2.5rem 2rem;
+      padding: 2rem;
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
     }
 
-    h1 {
-      font-size: 1.4rem;
-      color: #1a1a2e;
-      margin-bottom: .25rem;
-    }
+    h1 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: .25rem; }
+    .subtitle { font-size: .875rem; color: #6b7280; margin-bottom: 1.5rem; }
 
-    .subtitle {
-      font-size: .875rem;
+    /* Tabs */
+    .tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.75rem; }
+    .tab {
+      padding: .4rem .85rem;
+      border-radius: 2rem;
+      border: 1.5px solid #e5e7eb;
+      background: #fff;
+      font-size: .8rem;
+      font-weight: 500;
       color: #6b7280;
-      margin-bottom: 2rem;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
     }
+    .tab:hover { border-color: #4f46e5; color: #4f46e5; }
+    .tab.active { background: #4f46e5; border-color: #4f46e5; color: #fff; }
 
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Drop zone */
     .drop-zone {
       border: 2px dashed #d1d5db;
       border-radius: .75rem;
-      padding: 2.5rem 1rem;
+      padding: 2rem 1rem;
       text-align: center;
       cursor: pointer;
       transition: border-color .2s, background .2s;
       position: relative;
+      margin-bottom: 1.25rem;
     }
-
-    .drop-zone:hover,
-    .drop-zone.drag-over {
-      border-color: #4f46e5;
-      background: #eef2ff;
-    }
-
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #4f46e5; background: #eef2ff; }
     .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
+    .drop-icon { font-size: 2rem; margin-bottom: .4rem; }
+    .drop-label { font-size: .9rem; color: #374151; font-weight: 500; }
+    .drop-hint { font-size: .78rem; color: #9ca3af; margin-top: .2rem; }
+    .file-name { margin-top: .6rem; font-size: .82rem; color: #4f46e5; font-weight: 500; min-height: 1.2em; }
 
-    .drop-icon {
-      font-size: 2.5rem;
-      margin-bottom: .5rem;
-    }
-
-    .drop-label {
-      font-size: .95rem;
-      color: #374151;
-      font-weight: 500;
-    }
-
-    .drop-hint {
-      font-size: .8rem;
-      color: #9ca3af;
-      margin-top: .25rem;
-    }
-
-    .file-name {
-      margin-top: .75rem;
-      font-size: .85rem;
-      color: #4f46e5;
-      font-weight: 500;
-      min-height: 1.2em;
-    }
-
-    .options {
-      margin-top: 1.5rem;
-    }
-
-    .options label {
-      display: block;
-      font-size: .875rem;
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: .5rem;
-    }
-
-    .radio-group {
-      display: flex;
-      gap: .75rem;
-    }
-
+    /* Options */
+    .options { margin-bottom: 1.25rem; }
+    .options label { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .5rem; }
+    .radio-group { display: flex; gap: .75rem; }
     .radio-option {
-      flex: 1;
-      border: 2px solid #e5e7eb;
-      border-radius: .5rem;
-      padding: .75rem;
-      cursor: pointer;
-      transition: border-color .15s, background .15s;
-      display: flex;
-      align-items: flex-start;
-      gap: .5rem;
+      flex: 1; border: 2px solid #e5e7eb; border-radius: .5rem;
+      padding: .65rem; cursor: pointer; transition: border-color .15s, background .15s;
+      display: flex; align-items: flex-start; gap: .45rem;
     }
-
-    .radio-option:has(input:checked) {
-      border-color: #4f46e5;
-      background: #eef2ff;
-    }
-
+    .radio-option:has(input:checked) { border-color: #4f46e5; background: #eef2ff; }
     .radio-option input { margin-top: .1rem; accent-color: #4f46e5; }
+    .opt-title { font-size: .82rem; font-weight: 600; color: #1f2937; }
+    .opt-desc  { font-size: .72rem; color: #6b7280; }
 
-    .radio-option .opt-title { font-size: .85rem; font-weight: 600; color: #1f2937; }
-    .radio-option .opt-desc  { font-size: .75rem; color: #6b7280; }
-
-    .btn {
-      margin-top: 1.75rem;
-      width: 100%;
-      padding: .85rem;
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      border-radius: .65rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .2s, opacity .2s;
+    /* Select */
+    .select-wrap { margin-bottom: 1.25rem; }
+    .select-wrap label { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .5rem; }
+    select {
+      width: 100%; padding: .55rem .75rem; border: 1.5px solid #e5e7eb;
+      border-radius: .5rem; font-size: .875rem; color: #374151;
+      background: #fff; cursor: pointer;
     }
+    select:focus { outline: none; border-color: #4f46e5; }
 
+    /* Button */
+    .btn {
+      width: 100%; padding: .85rem; background: #4f46e5; color: #fff;
+      border: none; border-radius: .65rem; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background .2s, opacity .2s;
+    }
     .btn:hover:not(:disabled) { background: #4338ca; }
     .btn:disabled { opacity: .55; cursor: not-allowed; }
 
-    .status {
-      margin-top: 1.25rem;
-      font-size: .875rem;
-      min-height: 1.4em;
-      text-align: center;
-    }
-
-    .status.error { color: #dc2626; }
+    .status { margin-top: 1.1rem; font-size: .875rem; min-height: 1.4em; text-align: center; }
+    .status.error   { color: #dc2626; }
     .status.success { color: #16a34a; }
     .status.loading { color: #4f46e5; }
 
     .spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid #c7d2fe;
-      border-top-color: #4f46e5;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      vertical-align: middle;
-      margin-right: .35rem;
+      display: inline-block; width: 13px; height: 13px;
+      border: 2px solid #c7d2fe; border-top-color: #4f46e5;
+      border-radius: 50%; animation: spin .6s linear infinite;
+      vertical-align: middle; margin-right: .35rem;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .info { font-size: .78rem; color: #6b7280; margin-top: .5rem; text-align: center; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Conversor PDF → PDF/A</h1>
-    <p class="subtitle">Converta qualquer PDF para o formato de arquivamento PDF/A</p>
+<div class="card">
+  <h1>Conversor de Arquivos</h1>
+  <p class="subtitle">Converta PDFs e imagens rapidamente</p>
 
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".pdf" />
+  <div class="tabs">
+    <button class="tab active" data-panel="pdf-to-pdfa">PDF → PDF/A</button>
+    <button class="tab" data-panel="img-to-pdf">Imagem → PDF</button>
+    <button class="tab" data-panel="img-to-pdfa">Imagem → PDF/A</button>
+    <button class="tab" data-panel="pdf-to-img">PDF → Imagem</button>
+    <button class="tab" data-panel="merge">Juntar PDFs</button>
+  </div>
+
+  <!-- PDF → PDF/A -->
+  <div class="panel active" id="panel-pdf-to-pdfa">
+    <div class="drop-zone" id="dz-pdfa">
+      <input type="file" accept=".pdf" id="file-pdfa" />
       <div class="drop-icon">📄</div>
-      <div class="drop-label">Arraste o PDF aqui ou clique para selecionar</div>
-      <div class="drop-hint">Apenas arquivos .pdf</div>
-      <div class="file-name" id="fileName"></div>
+      <div class="drop-label">Arraste o PDF ou clique para selecionar</div>
+      <div class="drop-hint">Apenas .pdf</div>
+      <div class="file-name" id="fn-pdfa"></div>
     </div>
-
     <div class="options">
       <label>Versão PDF/A</label>
       <div class="radio-group">
         <label class="radio-option">
-          <input type="radio" name="level" value="1" />
-          <div>
-            <div class="opt-title">PDF/A-1b</div>
-            <div class="opt-desc">Máxima compatibilidade</div>
-          </div>
+          <input type="radio" name="pdfa-level" value="1" />
+          <div><div class="opt-title">PDF/A-1b</div><div class="opt-desc">Máxima compatibilidade</div></div>
         </label>
         <label class="radio-option">
-          <input type="radio" name="level" value="2" checked />
-          <div>
-            <div class="opt-title">PDF/A-2b</div>
-            <div class="opt-desc">Suporta transparências e camadas</div>
-          </div>
+          <input type="radio" name="pdfa-level" value="2" checked />
+          <div><div class="opt-title">PDF/A-2b</div><div class="opt-desc">Suporta transparências</div></div>
         </label>
       </div>
     </div>
-
-    <button class="btn" id="convertBtn" disabled>Converter para PDF/A</button>
-    <div class="status" id="status"></div>
+    <button class="btn" id="btn-pdfa" disabled>Converter para PDF/A</button>
+    <div class="status" id="st-pdfa"></div>
   </div>
 
-  <script>
-    const fileInput   = document.getElementById('fileInput');
-    const dropZone    = document.getElementById('dropZone');
-    const fileName    = document.getElementById('fileName');
-    const convertBtn  = document.getElementById('convertBtn');
-    const statusEl    = document.getElementById('status');
+  <!-- Imagem → PDF -->
+  <div class="panel" id="panel-img-to-pdf">
+    <div class="drop-zone" id="dz-img2pdf">
+      <input type="file" accept=".jpg,.jpeg,.png,.bmp,.tiff,.webp" id="file-img2pdf" multiple />
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-label">Arraste imagens ou clique para selecionar</div>
+      <div class="drop-hint">JPG, PNG, BMP, TIFF, WEBP — múltiplos arquivos</div>
+      <div class="file-name" id="fn-img2pdf"></div>
+    </div>
+    <button class="btn" id="btn-img2pdf" disabled>Converter para PDF</button>
+    <div class="status" id="st-img2pdf"></div>
+    <p class="info">Múltiplas imagens serão unidas em um único PDF</p>
+  </div>
 
-    function setFile(file) {
-      if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-        fileName.textContent = '';
-        convertBtn.disabled = true;
-        return;
-      }
-      fileName.textContent = `✔ ${file.name}`;
-      convertBtn.disabled = false;
-      statusEl.textContent = '';
-      statusEl.className = 'status';
+  <!-- Imagem → PDF/A -->
+  <div class="panel" id="panel-img-to-pdfa">
+    <div class="drop-zone" id="dz-img2pdfa">
+      <input type="file" accept=".jpg,.jpeg,.png,.bmp,.tiff,.webp" id="file-img2pdfa" multiple />
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-label">Arraste imagens ou clique para selecionar</div>
+      <div class="drop-hint">JPG, PNG, BMP, TIFF, WEBP — múltiplos arquivos</div>
+      <div class="file-name" id="fn-img2pdfa"></div>
+    </div>
+    <div class="options">
+      <label>Versão PDF/A</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="img-pdfa-level" value="1" />
+          <div><div class="opt-title">PDF/A-1b</div><div class="opt-desc">Máxima compatibilidade</div></div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="img-pdfa-level" value="2" checked />
+          <div><div class="opt-title">PDF/A-2b</div><div class="opt-desc">Suporta transparências</div></div>
+        </label>
+      </div>
+    </div>
+    <button class="btn" id="btn-img2pdfa" disabled>Converter para PDF/A</button>
+    <div class="status" id="st-img2pdfa"></div>
+  </div>
+
+  <!-- PDF → Imagem -->
+  <div class="panel" id="panel-pdf-to-img">
+    <div class="drop-zone" id="dz-pdf2img">
+      <input type="file" accept=".pdf" id="file-pdf2img" />
+      <div class="drop-icon">📄</div>
+      <div class="drop-label">Arraste o PDF ou clique para selecionar</div>
+      <div class="drop-hint">Apenas .pdf</div>
+      <div class="file-name" id="fn-pdf2img"></div>
+    </div>
+    <div class="select-wrap">
+      <label>Formato de saída</label>
+      <select id="img-format">
+        <option value="jpg">JPG</option>
+        <option value="png">PNG</option>
+      </select>
+    </div>
+    <button class="btn" id="btn-pdf2img" disabled>Extrair imagens</button>
+    <div class="status" id="st-pdf2img"></div>
+    <p class="info">PDFs com múltiplas páginas serão baixados em .zip</p>
+  </div>
+
+  <!-- Juntar PDFs -->
+  <div class="panel" id="panel-merge">
+    <div class="drop-zone" id="dz-merge">
+      <input type="file" accept=".pdf" id="file-merge" multiple />
+      <div class="drop-icon">📑</div>
+      <div class="drop-label">Arraste os PDFs ou clique para selecionar</div>
+      <div class="drop-hint">Mínimo 2 arquivos .pdf</div>
+      <div class="file-name" id="fn-merge"></div>
+    </div>
+    <button class="btn" id="btn-merge" disabled>Juntar PDFs</button>
+    <div class="status" id="st-merge"></div>
+    <p class="info">Os PDFs serão unidos na ordem em que forem selecionados</p>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  });
+});
+
+// Generic drop zone setup
+function setupDropZone(dzId, inputId, fnId, btnId, multiple) {
+  const dz = document.getElementById(dzId);
+  const input = document.getElementById(inputId);
+  const fn = document.getElementById(fnId);
+  const btn = document.getElementById(btnId);
+
+  function updateFiles(files) {
+    if (!files || files.length === 0) { fn.textContent = ''; btn.disabled = true; return; }
+    const valid = Array.from(files);
+    if (multiple) {
+      fn.textContent = `✔ ${valid.length} arquivo(s) selecionado(s)`;
+    } else {
+      fn.textContent = `✔ ${valid[0].name}`;
     }
+    btn.disabled = false;
+  }
 
-    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+  input.addEventListener('change', () => updateFiles(input.files));
 
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        fileInput.files = dt.files;
-        setFile(file);
-      }
-    });
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    updateFiles(input.files);
+  });
+}
 
-    convertBtn.addEventListener('click', async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
+setupDropZone('dz-pdfa',     'file-pdfa',     'fn-pdfa',     'btn-pdfa',     false);
+setupDropZone('dz-img2pdf',  'file-img2pdf',  'fn-img2pdf',  'btn-img2pdf',  true);
+setupDropZone('dz-img2pdfa', 'file-img2pdfa', 'fn-img2pdfa', 'btn-img2pdfa', true);
+setupDropZone('dz-pdf2img',  'file-pdf2img',  'fn-pdf2img',  'btn-pdf2img',  false);
+setupDropZone('dz-merge',    'file-merge',    'fn-merge',    'btn-merge',    true);
 
-      const level = document.querySelector('input[name="level"]:checked').value;
+// Generic submit
+async function submit(btnId, stId, buildForm, url, downloadName) {
+  const btn = document.getElementById(btnId);
+  const st  = document.getElementById(stId);
+  btn.disabled = true;
+  st.className = 'status loading';
+  st.innerHTML = '<span class="spinner"></span>Processando…';
+  try {
+    const res = await fetch(url, { method: 'POST', body: buildForm() });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Erro'); }
+    const blob = await res.blob();
+    const disp = res.headers.get('Content-Disposition') || '';
+    const match = disp.match(/filename="?([^"]+)"?/);
+    const name = match ? match[1] : downloadName;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    st.className = 'status success';
+    st.textContent = `✔ Download iniciado: ${name}`;
+  } catch(err) {
+    st.className = 'status error';
+    st.textContent = `Erro: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
 
-      convertBtn.disabled = true;
-      statusEl.className = 'status loading';
-      statusEl.innerHTML = '<span class="spinner"></span>Convertendo, aguarde…';
+// PDF → PDF/A
+document.getElementById('btn-pdfa').addEventListener('click', () => {
+  const level = document.querySelector('input[name="pdfa-level"]:checked').value;
+  submit('btn-pdfa', 'st-pdfa', () => {
+    const fd = new FormData();
+    fd.append('file', document.getElementById('file-pdfa').files[0]);
+    return fd;
+  }, `/convert?level=${level}`, 'arquivo_pdfa.pdf');
+});
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('level', level);
+// Imagem → PDF
+document.getElementById('btn-img2pdf').addEventListener('click', () => {
+  submit('btn-img2pdf', 'st-img2pdf', () => {
+    const fd = new FormData();
+    Array.from(document.getElementById('file-img2pdf').files).forEach(f => fd.append('files', f));
+    return fd;
+  }, '/image-to-pdf', 'imagens.pdf');
+});
 
-      try {
-        const res = await fetch(`/convert?level=${level}`, {
-          method: 'POST',
-          body: formData,
-        });
+// Imagem → PDF/A
+document.getElementById('btn-img2pdfa').addEventListener('click', () => {
+  const level = document.querySelector('input[name="img-pdfa-level"]:checked').value;
+  submit('btn-img2pdfa', 'st-img2pdfa', () => {
+    const fd = new FormData();
+    Array.from(document.getElementById('file-img2pdfa').files).forEach(f => fd.append('files', f));
+    return fd;
+  }, `/image-to-pdfa?level=${level}`, 'imagens_pdfa.pdf');
+});
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Erro desconhecido');
-        }
+// PDF → Imagem
+document.getElementById('btn-pdf2img').addEventListener('click', () => {
+  const fmt = document.getElementById('img-format').value;
+  submit('btn-pdf2img', 'st-pdf2img', () => {
+    const fd = new FormData();
+    fd.append('file', document.getElementById('file-pdf2img').files[0]);
+    return fd;
+  }, `/pdf-to-image?format=${fmt}`, `paginas.${fmt}`);
+});
 
-        const blob = await res.blob();
-        const disposition = res.headers.get('Content-Disposition') || '';
-        const nameMatch = disposition.match(/filename="?([^"]+)"?/);
-        const downloadName = nameMatch ? nameMatch[1] : 'arquivo_pdfa.pdf';
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = downloadName;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        statusEl.className = 'status success';
-        statusEl.textContent = `✔ Download iniciado: ${downloadName}`;
-      } catch (err) {
-        statusEl.className = 'status error';
-        statusEl.textContent = `Erro: ${err.message}`;
-      } finally {
-        convertBtn.disabled = false;
-      }
-    });
-  </script>
+// Juntar PDFs
+document.getElementById('btn-merge').addEventListener('click', () => {
+  const files = document.getElementById('file-merge').files;
+  if (files.length < 2) {
+    const st = document.getElementById('st-merge');
+    st.className = 'status error';
+    st.textContent = 'Selecione pelo menos 2 PDFs.';
+    return;
+  }
+  submit('btn-merge', 'st-merge', () => {
+    const fd = new FormData();
+    Array.from(files).forEach(f => fd.append('files', f));
+    return fd;
+  }, '/merge-pdf', 'unificado.pdf');
+});
+</script>
 </body>
 </html>
