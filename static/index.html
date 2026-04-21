@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversor PDF para PDF/A</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      color: #1a1a2e;
+      margin-bottom: .25rem;
+    }
+
+    .subtitle {
+      font-size: .875rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: .75rem;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: .5rem;
+    }
+
+    .drop-label {
+      font-size: .95rem;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .drop-hint {
+      font-size: .8rem;
+      color: #9ca3af;
+      margin-top: .25rem;
+    }
+
+    .file-name {
+      margin-top: .75rem;
+      font-size: .85rem;
+      color: #4f46e5;
+      font-weight: 500;
+      min-height: 1.2em;
+    }
+
+    .options {
+      margin-top: 1.5rem;
+    }
+
+    .options label {
+      display: block;
+      font-size: .875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: .5rem;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: .75rem;
+    }
+
+    .radio-option {
+      flex: 1;
+      border: 2px solid #e5e7eb;
+      border-radius: .5rem;
+      padding: .75rem;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+
+    .radio-option:has(input:checked) {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+
+    .radio-option input { margin-top: .1rem; accent-color: #4f46e5; }
+
+    .radio-option .opt-title { font-size: .85rem; font-weight: 600; color: #1f2937; }
+    .radio-option .opt-desc  { font-size: .75rem; color: #6b7280; }
+
+    .btn {
+      margin-top: 1.75rem;
+      width: 100%;
+      padding: .85rem;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: .65rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, opacity .2s;
+    }
+
+    .btn:hover:not(:disabled) { background: #4338ca; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .status {
+      margin-top: 1.25rem;
+      font-size: .875rem;
+      min-height: 1.4em;
+      text-align: center;
+    }
+
+    .status.error { color: #dc2626; }
+    .status.success { color: #16a34a; }
+    .status.loading { color: #4f46e5; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #c7d2fe;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: .35rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Conversor PDF → PDF/A</h1>
+    <p class="subtitle">Converta qualquer PDF para o formato de arquivamento PDF/A</p>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".pdf" />
+      <div class="drop-icon">📄</div>
+      <div class="drop-label">Arraste o PDF aqui ou clique para selecionar</div>
+      <div class="drop-hint">Apenas arquivos .pdf</div>
+      <div class="file-name" id="fileName"></div>
+    </div>
+
+    <div class="options">
+      <label>Versão PDF/A</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="level" value="1" />
+          <div>
+            <div class="opt-title">PDF/A-1b</div>
+            <div class="opt-desc">Máxima compatibilidade</div>
+          </div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="level" value="2" checked />
+          <div>
+            <div class="opt-title">PDF/A-2b</div>
+            <div class="opt-desc">Suporta transparências e camadas</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn" id="convertBtn" disabled>Converter para PDF/A</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    const fileInput   = document.getElementById('fileInput');
+    const dropZone    = document.getElementById('dropZone');
+    const fileName    = document.getElementById('fileName');
+    const convertBtn  = document.getElementById('convertBtn');
+    const statusEl    = document.getElementById('status');
+
+    function setFile(file) {
+      if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+        fileName.textContent = '';
+        convertBtn.disabled = true;
+        return;
+      }
+      fileName.textContent = `✔ ${file.name}`;
+      convertBtn.disabled = false;
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+    }
+
+    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        setFile(file);
+      }
+    });
+
+    convertBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const level = document.querySelector('input[name="level"]:checked').value;
+
+      convertBtn.disabled = true;
+      statusEl.className = 'status loading';
+      statusEl.innerHTML = '<span class="spinner"></span>Convertendo, aguarde…';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('level', level);
+
+      try {
+        const res = await fetch(`/convert?level=${level}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Erro desconhecido');
+        }
+
+        const blob = await res.blob();
+        const disposition = res.headers.get('Content-Disposition') || '';
+        const nameMatch = disposition.match(/filename="?([^"]+)"?/);
+        const downloadName = nameMatch ? nameMatch[1] : 'arquivo_pdfa.pdf';
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadName;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        statusEl.className = 'status success';
+        statusEl.textContent = `✔ Download iniciado: ${downloadName}`;
+      } catch (err) {
+        statusEl.className = 'status error';
+        statusEl.textContent = `Erro: ${err.message}`;
+      } finally {
+        convertBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
