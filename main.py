@@ -20,12 +20,14 @@ def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tupl
     cmd = [
         "ocrmypdf",
         "--skip-text",
+        "--tesseract-timeout", "0",
+        "--optimize", "0",
         "--output-type", f"pdfa-{level}",
-        "--quiet",
+        "-l", "por+eng",
         str(input_path),
         str(output_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     return result.returncode == 0, result.stdout + "\n" + result.stderr
 
 
