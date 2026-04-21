@@ -32,25 +32,17 @@ def find_gs_icc_profile() -> str | None:
 
 
 def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tuple[bool, str]:
-    icc = find_gs_icc_profile()
-
     cmd = [
         "gs",
         f"-dPDFA={level}",
         "-dBATCH",
         "-dNOPAUSE",
-        "-dNOOUTERSAVE",
         "-sDEVICE=pdfwrite",
-        "-sProcessColorModel=DeviceRGB",
         "-sPDFACompatibilityPolicy=1",
         "-dEmbedAllFonts=true",
-        "-dSubsetFonts=true",
+        f"-sOutputFile={output_path}",
+        str(input_path),
     ]
-
-    if icc:
-        cmd += [f"-sDefaultRGBProfile={icc}", f"-sOutputICCProfile={icc}"]
-
-    cmd += [f"-sOutputFile={output_path}", str(input_path)]
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
     full_output = result.stdout + "\n" + result.stderr
