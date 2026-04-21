@@ -252,7 +252,7 @@
   <!-- Juntar PDFs -->
   <div class="panel" id="panel-merge">
     <input type="file" accept=".pdf" id="file-merge-add" style="display:none" />
-    <button class="btn-add" id="btn-merge-add">＋ Adicionar PDF</button>
+    <label class="btn-add" for="file-merge-add">＋ Adicionar PDF</label>
     <div id="merge-list"></div>
     <p class="info" id="merge-hint">Arraste os itens para reordenar</p>
     <button class="btn" id="btn-merge" disabled style="margin-top:1rem">Juntar PDFs</button>
@@ -380,7 +380,6 @@ document.getElementById('btn-pdf2img').addEventListener('click', () => {
 const mergeFiles = [];
 const mergeList  = document.getElementById('merge-list');
 const mergeBtn   = document.getElementById('btn-merge');
-const mergeAdd   = document.getElementById('btn-merge-add');
 const mergeInput = document.getElementById('file-merge-add');
 
 function renderMergeList() {
@@ -426,7 +425,6 @@ function renderMergeList() {
   mergeBtn.disabled = mergeFiles.length < 2;
 }
 
-mergeAdd.addEventListener('click', () => mergeInput.click());
 mergeInput.addEventListener('change', () => {
   if (mergeInput.files[0]) {
     mergeFiles.push(mergeInput.files[0]);
