@@ -120,10 +120,10 @@
 
     /* Merge list */
     .btn-add {
-      width: 100%; padding: .7rem; background: #fff; color: #4f46e5;
+      display: block; width: 100%; padding: .7rem; background: #fff; color: #4f46e5;
       border: 2px dashed #4f46e5; border-radius: .65rem; font-size: .95rem;
       font-weight: 600; cursor: pointer; transition: background .15s;
-      margin-bottom: .75rem;
+      margin-bottom: .75rem; text-align: center;
     }
     .btn-add:hover { background: #eef2ff; }
 
@@ -254,7 +254,7 @@
     <input type="file" accept=".pdf" id="file-merge-add" style="display:none" />
     <label class="btn-add" for="file-merge-add">＋ Adicionar PDF</label>
     <div id="merge-list"></div>
-    <p class="info" id="merge-hint">Arraste os itens para reordenar</p>
+    <p class="info" id="merge-hint" style="display:none">Arraste os itens para reordenar</p>
     <button class="btn" id="btn-merge" disabled style="margin-top:1rem">Juntar PDFs</button>
     <div class="status" id="st-merge"></div>
   </div>
@@ -423,6 +423,7 @@ function renderMergeList() {
     mergeList.appendChild(item);
   });
   mergeBtn.disabled = mergeFiles.length < 2;
+  document.getElementById('merge-hint').style.display = mergeFiles.length >= 2 ? 'block' : 'none';
 }
 
 mergeInput.addEventListener('change', () => {
