@@ -1,5 +1,4 @@
 import glob
-import os
 import subprocess
 import tempfile
 import uuid
@@ -23,6 +22,7 @@ def find_gs_icc_profile() -> str | None:
         "/usr/share/ghostscript/*/iccprofiles/srgb.icc",
         "/usr/share/ghostscript/*/iccprofiles/default_rgb.icc",
         "/usr/share/color/icc/ghostscript/srgb.icc",
+        "/usr/share/ghostscript/*/iccprofiles/sRGB.icc",
     ]
     for pattern in patterns:
         matches = glob.glob(pattern)
@@ -31,7 +31,26 @@ def find_gs_icc_profile() -> str | None:
     return None
 
 
+def write_pdfa_def(icc_path: str, dest: Path) -> None:
+    content = f"""%!
+[/_objdef {{icc_PDFA}} /type /stream /OBJ pdfmark
+[{{icc_PDFA}} <</N 3>> /PUT pdfmark
+[{{icc_PDFA}} ({icc_path}) (r) file /PUT pdfmark
+[/_objdef {{OutputIntent_PDFA}} /type /dict /OBJ pdfmark
+[{{OutputIntent_PDFA}} <<
+  /Type /OutputIntent
+  /S /GTS_PDFA1
+  /DestOutputProfile {{icc_PDFA}}
+  /OutputConditionIdentifier (sRGB IEC61966-2.1)
+>> /PUT pdfmark
+[{{Catalog}} <</OutputIntents [{{OutputIntent_PDFA}}]>> /PUT pdfmark
+"""
+    dest.write_text(content, encoding="utf-8")
+
+
 def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tuple[bool, str]:
+    icc = find_gs_icc_profile()
+
     cmd = [
         "gs",
         f"-dPDFA={level}",
@@ -41,17 +60,26 @@ def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tupl
         "-sDEVICE=pdfwrite",
         "-sProcessColorModel=DeviceRGB",
         "-sPDFACompatibilityPolicy=1",
-        "-dCompatibilityLevel=1.7",
+        "-dEmbedAllFonts=true",
+        "-dSubsetFonts=true",
+        f"-sOutputFile={output_path}",
     ]
 
-    icc = find_gs_icc_profile()
+    pdfa_def_path = None
     if icc:
-        cmd.append(f"-sDefaultRGBProfile={icc}")
+        pdfa_def_path = output_path.parent / f"{output_path.stem}_def.ps"
+        write_pdfa_def(icc, pdfa_def_path)
+        cmd.append(str(pdfa_def_path))
 
-    cmd += [f"-sOutputFile={output_path}", str(input_path)]
+    cmd.append(str(input_path))
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    return result.returncode == 0, result.stderr
+
+    if pdfa_def_path and pdfa_def_path.exists():
+        pdfa_def_path.unlink()
+
+    full_output = result.stdout + "\n" + result.stderr
+    return result.returncode == 0, full_output
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -75,10 +103,10 @@ async def convert(file: UploadFile = File(...), level: int = 2):
     try:
         input_path.write_bytes(await file.read())
 
-        success, stderr = convert_to_pdfa(input_path, output_path, level)
+        success, output = convert_to_pdfa(input_path, output_path, level)
 
         if not success or not output_path.exists():
-            raise HTTPException(status_code=500, detail=f"Falha na conversão: {stderr[:500]}")
+            raise HTTPException(status_code=500, detail=f"Falha na conversão: {output[:800]}")
 
         original_name = Path(file.filename).stem
         download_name = f"{original_name}_PDFA-{level}b.pdf"
@@ -92,4 +120,3 @@ async def convert(file: UploadFile = File(...), level: int = 2):
     finally:
         if input_path.exists():
             input_path.unlink()
-        # output_path is cleaned up after response is sent; leave for FileResponse
