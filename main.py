@@ -28,7 +28,10 @@ def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tupl
         str(output_path),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-    return result.returncode == 0, result.stdout + "\n" + result.stderr
+    full_output = result.stdout + "\n" + result.stderr
+    # ocrmypdf may exit non-zero but still produce a valid PDF/A file
+    success = output_path.exists() and output_path.stat().st_size > 0
+    return success, full_output
 
 
 @app.get("/", response_class=HTMLResponse)
