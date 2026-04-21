@@ -117,6 +117,36 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .info { font-size: .78rem; color: #6b7280; margin-top: .5rem; text-align: center; }
+
+    /* Merge list */
+    .btn-add {
+      width: 100%; padding: .7rem; background: #fff; color: #4f46e5;
+      border: 2px dashed #4f46e5; border-radius: .65rem; font-size: .95rem;
+      font-weight: 600; cursor: pointer; transition: background .15s;
+      margin-bottom: .75rem;
+    }
+    .btn-add:hover { background: #eef2ff; }
+
+    #merge-list { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .25rem; }
+
+    .merge-item {
+      display: flex; align-items: center; gap: .5rem;
+      background: #f9fafb; border: 1.5px solid #e5e7eb;
+      border-radius: .5rem; padding: .55rem .65rem;
+      cursor: grab; user-select: none;
+    }
+    .merge-item.dragging { opacity: .4; }
+    .merge-item.drag-over { border-color: #4f46e5; background: #eef2ff; }
+
+    .drag-handle { color: #9ca3af; font-size: 1rem; cursor: grab; flex-shrink: 0; }
+    .merge-name { flex: 1; font-size: .82rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .merge-num  { font-size: .75rem; color: #9ca3af; flex-shrink: 0; }
+    .merge-remove {
+      background: none; border: none; color: #9ca3af; cursor: pointer;
+      font-size: 1.1rem; line-height: 1; padding: 0 .1rem; flex-shrink: 0;
+      transition: color .15s;
+    }
+    .merge-remove:hover { color: #dc2626; }
   </style>
 </head>
 <body>
@@ -221,16 +251,12 @@
 
   <!-- Juntar PDFs -->
   <div class="panel" id="panel-merge">
-    <div class="drop-zone" id="dz-merge">
-      <input type="file" accept=".pdf" id="file-merge" multiple />
-      <div class="drop-icon">📑</div>
-      <div class="drop-label">Arraste os PDFs ou clique para selecionar</div>
-      <div class="drop-hint">Mínimo 2 arquivos .pdf</div>
-      <div class="file-name" id="fn-merge"></div>
-    </div>
-    <button class="btn" id="btn-merge" disabled>Juntar PDFs</button>
+    <input type="file" accept=".pdf" id="file-merge-add" style="display:none" />
+    <button class="btn-add" id="btn-merge-add">＋ Adicionar PDF</button>
+    <div id="merge-list"></div>
+    <p class="info" id="merge-hint">Arraste os itens para reordenar</p>
+    <button class="btn" id="btn-merge" disabled style="margin-top:1rem">Juntar PDFs</button>
     <div class="status" id="st-merge"></div>
-    <p class="info">Os PDFs serão unidos na ordem em que forem selecionados</p>
   </div>
 </div>
 
@@ -350,18 +376,70 @@ document.getElementById('btn-pdf2img').addEventListener('click', () => {
   }, `/pdf-to-image?format=${fmt}`, `paginas.${fmt}`);
 });
 
-// Juntar PDFs
-document.getElementById('btn-merge').addEventListener('click', () => {
-  const files = document.getElementById('file-merge').files;
-  if (files.length < 2) {
-    const st = document.getElementById('st-merge');
-    st.className = 'status error';
-    st.textContent = 'Selecione pelo menos 2 PDFs.';
-    return;
+// Juntar PDFs — list manager
+const mergeFiles = [];
+const mergeList  = document.getElementById('merge-list');
+const mergeBtn   = document.getElementById('btn-merge');
+const mergeAdd   = document.getElementById('btn-merge-add');
+const mergeInput = document.getElementById('file-merge-add');
+
+function renderMergeList() {
+  mergeList.innerHTML = '';
+  mergeFiles.forEach((file, i) => {
+    const item = document.createElement('div');
+    item.className = 'merge-item';
+    item.draggable = true;
+    item.dataset.index = i;
+    item.innerHTML = `
+      <span class="drag-handle">⠿</span>
+      <span class="merge-num">${i + 1}.</span>
+      <span class="merge-name" title="${file.name}">${file.name}</span>
+      <button class="merge-remove" title="Remover">×</button>`;
+
+    item.querySelector('.merge-remove').addEventListener('click', () => {
+      mergeFiles.splice(i, 1);
+      renderMergeList();
+    });
+
+    // Drag to reorder
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', i);
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const from = parseInt(e.dataTransfer.getData('text/plain'));
+      const to = i;
+      if (from !== to) {
+        const [moved] = mergeFiles.splice(from, 1);
+        mergeFiles.splice(to, 0, moved);
+        renderMergeList();
+      }
+    });
+
+    mergeList.appendChild(item);
+  });
+  mergeBtn.disabled = mergeFiles.length < 2;
+}
+
+mergeAdd.addEventListener('click', () => mergeInput.click());
+mergeInput.addEventListener('change', () => {
+  if (mergeInput.files[0]) {
+    mergeFiles.push(mergeInput.files[0]);
+    mergeInput.value = '';
+    renderMergeList();
   }
+});
+
+mergeBtn.addEventListener('click', () => {
+  if (mergeFiles.length < 2) return;
   submit('btn-merge', 'st-merge', () => {
     const fd = new FormData();
-    Array.from(files).forEach(f => fd.append('files', f));
+    mergeFiles.forEach(f => fd.append('files', f));
     return fd;
   }, '/merge-pdf', 'unificado.pdf');
 });
