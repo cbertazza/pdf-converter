@@ -1,4 +1,3 @@
-import glob
 import subprocess
 import tempfile
 import uuid
@@ -17,36 +16,17 @@ TEMP_DIR = Path(tempfile.gettempdir()) / "pdf_converter"
 TEMP_DIR.mkdir(exist_ok=True)
 
 
-def find_gs_icc_profile() -> str | None:
-    patterns = [
-        "/usr/share/ghostscript/*/iccprofiles/srgb.icc",
-        "/usr/share/ghostscript/*/iccprofiles/default_rgb.icc",
-        "/usr/share/color/icc/ghostscript/srgb.icc",
-        "/usr/share/ghostscript/*/iccprofiles/sRGB.icc",
-    ]
-    for pattern in patterns:
-        matches = glob.glob(pattern)
-        if matches:
-            return matches[0]
-    return None
-
-
 def convert_to_pdfa(input_path: Path, output_path: Path, level: int = 2) -> tuple[bool, str]:
     cmd = [
-        "gs",
-        f"-dPDFA={level}",
-        "-dBATCH",
-        "-dNOPAUSE",
-        "-sDEVICE=pdfwrite",
-        "-sPDFACompatibilityPolicy=1",
-        "-dEmbedAllFonts=true",
-        f"-sOutputFile={output_path}",
+        "ocrmypdf",
+        "--skip-text",
+        "--output-type", f"pdfa-{level}",
+        "--quiet",
         str(input_path),
+        str(output_path),
     ]
-
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    full_output = result.stdout + "\n" + result.stderr
-    return result.returncode == 0, full_output
+    return result.returncode == 0, result.stdout + "\n" + result.stderr
 
 
 @app.get("/", response_class=HTMLResponse)
