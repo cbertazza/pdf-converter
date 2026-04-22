@@ -78,30 +78,13 @@ async def pdf_to_pdfa(file: UploadFile = File(...), level: int = 2):
 
 
 @app.post("/image-to-pdf")
-async def image_to_pdf(files: List[UploadFile] = File(...)):
-    temps = []
-    out = new_path("_out.pdf")
-    try:
-        for f in files:
-            ext = Path(f.filename).suffix.lower()
-            if ext not in ALLOWED_IMAGES:
-                raise HTTPException(400, f"Formato não suportado: {ext}")
-            tmp = new_path(ext)
-            tmp.write_bytes(await f.read())
-            temps.append(tmp)
-        images_to_pdf(temps, out)
-        return FileResponse(out, media_type="application/pdf", filename="imagens.pdf")
-    finally:
-        for t in temps:
-            if t.exists():
-                t.unlink()
-
-
-@app.post("/image-to-pdfa")
-async def image_to_pdfa(files: List[UploadFile] = File(...), level: int = 2):
+async def image_to_pdf(files: List[UploadFile] = File(...), pdfa: int = 0):
+    # pdfa: 0 = PDF comum, 1 = PDF/A-1b, 2 = PDF/A-2b
+    if pdfa not in (0, 1, 2):
+        raise HTTPException(400, "pdfa deve ser 0, 1 ou 2.")
     temps = []
     mid = new_path("_mid.pdf")
-    out = new_path("_out.pdf")
+    out = new_path("_out.pdf") if pdfa else mid
     try:
         for f in files:
             ext = Path(f.filename).suffix.lower()
@@ -111,15 +94,19 @@ async def image_to_pdfa(files: List[UploadFile] = File(...), level: int = 2):
             tmp.write_bytes(await f.read())
             temps.append(tmp)
         images_to_pdf(temps, mid)
-        ok, msg = run_pdfa(mid, out, level)
-        if not ok:
-            raise HTTPException(500, f"Falha: {msg[:800]}")
-        return FileResponse(out, media_type="application/pdf", filename=f"imagens_PDFA-{level}b.pdf")
+        if pdfa:
+            ok, msg = run_pdfa(mid, out, pdfa)
+            if not ok:
+                raise HTTPException(500, f"Falha na conversão PDF/A: {msg[:800]}")
+            filename = f"imagens_PDFA-{pdfa}b.pdf"
+        else:
+            filename = "imagens.pdf"
+        return FileResponse(out, media_type="application/pdf", filename=filename)
     finally:
         for t in temps:
             if t.exists():
                 t.unlink()
-        if mid.exists():
+        if pdfa and mid.exists():
             mid.unlink()
 
 

@@ -67,20 +67,20 @@
     }
     .drop-icon { font-size: 2rem; margin-bottom: .4rem; }
     .drop-label { font-size: .9rem; color: #374151; font-weight: 500; }
-    .drop-hint { font-size: .78rem; color: #9ca3af; margin-top: .2rem; }
-    .file-name { margin-top: .6rem; font-size: .82rem; color: #4f46e5; font-weight: 500; min-height: 1.2em; }
+    .drop-hint  { font-size: .78rem; color: #9ca3af; margin-top: .2rem; }
+    .file-name  { margin-top: .6rem; font-size: .82rem; color: #4f46e5; font-weight: 500; min-height: 1.2em; }
 
     /* Options */
     .options { margin-bottom: 1.25rem; }
-    .options label { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .5rem; }
-    .radio-group { display: flex; gap: .75rem; }
+    .options > label { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .5rem; }
+    .radio-group { display: flex; gap: .6rem; flex-wrap: wrap; }
     .radio-option {
-      flex: 1; border: 2px solid #e5e7eb; border-radius: .5rem;
+      flex: 1; min-width: 120px; border: 2px solid #e5e7eb; border-radius: .5rem;
       padding: .65rem; cursor: pointer; transition: border-color .15s, background .15s;
       display: flex; align-items: flex-start; gap: .45rem;
     }
     .radio-option:has(input:checked) { border-color: #4f46e5; background: #eef2ff; }
-    .radio-option input { margin-top: .1rem; accent-color: #4f46e5; }
+    .radio-option input { margin-top: .1rem; accent-color: #4f46e5; flex-shrink: 0; }
     .opt-title { font-size: .82rem; font-weight: 600; color: #1f2937; }
     .opt-desc  { font-size: .72rem; color: #6b7280; }
 
@@ -118,7 +118,7 @@
 
     .info { font-size: .78rem; color: #6b7280; margin-top: .5rem; text-align: center; }
 
-    /* Merge list */
+    /* File list (imagens + merge) */
     .btn-add {
       display: block; width: 100%; padding: .7rem; background: #fff; color: #4f46e5;
       border: 2px dashed #4f46e5; border-radius: .65rem; font-size: .95rem;
@@ -127,26 +127,26 @@
     }
     .btn-add:hover { background: #eef2ff; }
 
-    #merge-list { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .25rem; }
+    .file-list { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .25rem; }
 
-    .merge-item {
+    .list-item {
       display: flex; align-items: center; gap: .5rem;
       background: #f9fafb; border: 1.5px solid #e5e7eb;
       border-radius: .5rem; padding: .55rem .65rem;
       cursor: grab; user-select: none;
     }
-    .merge-item.dragging { opacity: .4; }
-    .merge-item.drag-over { border-color: #4f46e5; background: #eef2ff; }
+    .list-item.dragging  { opacity: .4; }
+    .list-item.drag-over { border-color: #4f46e5; background: #eef2ff; }
 
-    .drag-handle { color: #9ca3af; font-size: 1rem; cursor: grab; flex-shrink: 0; }
-    .merge-name { flex: 1; font-size: .82rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .merge-num  { font-size: .75rem; color: #9ca3af; flex-shrink: 0; }
-    .merge-remove {
+    .drag-handle  { color: #9ca3af; font-size: 1rem; cursor: grab; flex-shrink: 0; }
+    .item-num     { font-size: .75rem; color: #9ca3af; flex-shrink: 0; }
+    .item-name    { flex: 1; font-size: .82rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-remove  {
       background: none; border: none; color: #9ca3af; cursor: pointer;
       font-size: 1.1rem; line-height: 1; padding: 0 .1rem; flex-shrink: 0;
       transition: color .15s;
     }
-    .merge-remove:hover { color: #dc2626; }
+    .item-remove:hover { color: #dc2626; }
   </style>
 </head>
 <body>
@@ -157,7 +157,6 @@
   <div class="tabs">
     <button class="tab active" data-panel="pdf-to-pdfa">PDF → PDF/A</button>
     <button class="tab" data-panel="img-to-pdf">Imagem → PDF</button>
-    <button class="tab" data-panel="img-to-pdfa">Imagem → PDF/A</button>
     <button class="tab" data-panel="pdf-to-img">PDF → Imagem</button>
     <button class="tab" data-panel="merge">Juntar PDFs</button>
   </div>
@@ -190,42 +189,29 @@
 
   <!-- Imagem → PDF -->
   <div class="panel" id="panel-img-to-pdf">
-    <div class="drop-zone" id="dz-img2pdf">
-      <input type="file" accept=".jpg,.jpeg,.png,.bmp,.tiff,.webp" id="file-img2pdf" multiple />
-      <div class="drop-icon">🖼️</div>
-      <div class="drop-label">Arraste imagens ou clique para selecionar</div>
-      <div class="drop-hint">JPG, PNG, BMP, TIFF, WEBP — múltiplos arquivos</div>
-      <div class="file-name" id="fn-img2pdf"></div>
-    </div>
-    <button class="btn" id="btn-img2pdf" disabled>Converter para PDF</button>
-    <div class="status" id="st-img2pdf"></div>
-    <p class="info">Múltiplas imagens serão unidas em um único PDF</p>
-  </div>
-
-  <!-- Imagem → PDF/A -->
-  <div class="panel" id="panel-img-to-pdfa">
-    <div class="drop-zone" id="dz-img2pdfa">
-      <input type="file" accept=".jpg,.jpeg,.png,.bmp,.tiff,.webp" id="file-img2pdfa" multiple />
-      <div class="drop-icon">🖼️</div>
-      <div class="drop-label">Arraste imagens ou clique para selecionar</div>
-      <div class="drop-hint">JPG, PNG, BMP, TIFF, WEBP — múltiplos arquivos</div>
-      <div class="file-name" id="fn-img2pdfa"></div>
-    </div>
-    <div class="options">
-      <label>Versão PDF/A</label>
+    <input type="file" accept=".jpg,.jpeg,.png,.bmp,.tiff,.webp" id="file-img-add" style="display:none" />
+    <label class="btn-add" for="file-img-add">＋ Adicionar Imagem</label>
+    <div class="file-list" id="img-list"></div>
+    <p class="info" id="img-hint" style="display:none">Arraste os itens para reordenar</p>
+    <div class="options" style="margin-top:1rem">
+      <label>Formato de saída</label>
       <div class="radio-group">
         <label class="radio-option">
-          <input type="radio" name="img-pdfa-level" value="1" />
+          <input type="radio" name="img-format" value="0" checked />
+          <div><div class="opt-title">PDF comum</div><div class="opt-desc">Sem conversão</div></div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="img-format" value="1" />
           <div><div class="opt-title">PDF/A-1b</div><div class="opt-desc">Máxima compatibilidade</div></div>
         </label>
         <label class="radio-option">
-          <input type="radio" name="img-pdfa-level" value="2" checked />
+          <input type="radio" name="img-format" value="2" />
           <div><div class="opt-title">PDF/A-2b</div><div class="opt-desc">Suporta transparências</div></div>
         </label>
       </div>
     </div>
-    <button class="btn" id="btn-img2pdfa" disabled>Converter para PDF/A</button>
-    <div class="status" id="st-img2pdfa"></div>
+    <button class="btn" id="btn-img2pdf" disabled style="margin-top:1rem">Converter para PDF</button>
+    <div class="status" id="st-img2pdf"></div>
   </div>
 
   <!-- PDF → Imagem -->
@@ -239,7 +225,7 @@
     </div>
     <div class="select-wrap">
       <label>Formato de saída</label>
-      <select id="img-format">
+      <select id="img-out-format">
         <option value="jpg">JPG</option>
         <option value="png">PNG</option>
       </select>
@@ -253,11 +239,11 @@
   <div class="panel" id="panel-merge">
     <input type="file" accept=".pdf" id="file-merge-add" style="display:none" />
     <label class="btn-add" for="file-merge-add">＋ Adicionar PDF</label>
-    <div id="merge-list"></div>
+    <div class="file-list" id="merge-list"></div>
     <p class="info" id="merge-hint" style="display:none">Arraste os itens para reordenar</p>
     <div class="options" style="margin-top:1rem">
       <label>Formato de saída</label>
-      <div class="radio-group" style="flex-wrap:wrap">
+      <div class="radio-group">
         <label class="radio-option">
           <input type="radio" name="merge-format" value="0" checked />
           <div><div class="opt-title">PDF comum</div><div class="opt-desc">Sem conversão</div></div>
@@ -288,26 +274,17 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// Generic drop zone setup
-function setupDropZone(dzId, inputId, fnId, btnId, multiple) {
+// Generic drop zone
+function setupDropZone(dzId, inputId, fnId, btnId) {
   const dz = document.getElementById(dzId);
   const input = document.getElementById(inputId);
   const fn = document.getElementById(fnId);
   const btn = document.getElementById(btnId);
-
-  function updateFiles(files) {
-    if (!files || files.length === 0) { fn.textContent = ''; btn.disabled = true; return; }
-    const valid = Array.from(files);
-    if (multiple) {
-      fn.textContent = `✔ ${valid.length} arquivo(s) selecionado(s)`;
-    } else {
-      fn.textContent = `✔ ${valid[0].name}`;
-    }
+  input.addEventListener('change', () => {
+    if (!input.files.length) { fn.textContent = ''; btn.disabled = true; return; }
+    fn.textContent = `✔ ${input.files[0].name}`;
     btn.disabled = false;
-  }
-
-  input.addEventListener('change', () => updateFiles(input.files));
-
+  });
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
   dz.addEventListener('drop', e => {
@@ -315,14 +292,62 @@ function setupDropZone(dzId, inputId, fnId, btnId, multiple) {
     const dt = new DataTransfer();
     Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
     input.files = dt.files;
-    updateFiles(input.files);
+    input.dispatchEvent(new Event('change'));
   });
 }
 
-setupDropZone('dz-pdfa',     'file-pdfa',     'fn-pdfa',     'btn-pdfa',     false);
-setupDropZone('dz-img2pdf',  'file-img2pdf',  'fn-img2pdf',  'btn-img2pdf',  true);
-setupDropZone('dz-img2pdfa', 'file-img2pdfa', 'fn-img2pdfa', 'btn-img2pdfa', true);
-setupDropZone('dz-pdf2img',  'file-pdf2img',  'fn-pdf2img',  'btn-pdf2img',  false);
+setupDropZone('dz-pdfa',    'file-pdfa',    'fn-pdfa',    'btn-pdfa');
+setupDropZone('dz-pdf2img', 'file-pdf2img', 'fn-pdf2img', 'btn-pdf2img');
+
+// Generic list manager (imagens + merge)
+function createListManager(inputId, listId, hintId, btnId, minItems) {
+  const files   = [];
+  const listEl  = document.getElementById(listId);
+  const hintEl  = document.getElementById(hintId);
+  const btnEl   = document.getElementById(btnId);
+  const inputEl = document.getElementById(inputId);
+
+  function render() {
+    listEl.innerHTML = '';
+    files.forEach((file, i) => {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.draggable = true;
+      item.innerHTML = `
+        <span class="drag-handle">⠿</span>
+        <span class="item-num">${i + 1}.</span>
+        <span class="item-name" title="${file.name}">${file.name}</span>
+        <button class="item-remove" title="Remover">×</button>`;
+      item.querySelector('.item-remove').addEventListener('click', () => {
+        files.splice(i, 1); render();
+      });
+      item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', i);
+        setTimeout(() => item.classList.add('dragging'), 0);
+      });
+      item.addEventListener('dragend', () => item.classList.remove('dragging'));
+      item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+      item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+      item.addEventListener('drop', e => {
+        e.preventDefault(); item.classList.remove('drag-over');
+        const from = parseInt(e.dataTransfer.getData('text/plain'));
+        if (from !== i) { const [m] = files.splice(from, 1); files.splice(i, 0, m); render(); }
+      });
+      listEl.appendChild(item);
+    });
+    btnEl.disabled = files.length < minItems;
+    hintEl.style.display = files.length >= 2 ? 'block' : 'none';
+  }
+
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files[0]) { files.push(inputEl.files[0]); inputEl.value = ''; render(); }
+  });
+
+  return files;
+}
+
+const imgFiles   = createListManager('file-img-add',   'img-list',   'img-hint',   'btn-img2pdf', 1);
+const mergeFiles = createListManager('file-merge-add', 'merge-list', 'merge-hint', 'btn-merge',   2);
 
 // Generic submit
 async function submit(btnId, stId, buildForm, url, downloadName) {
@@ -336,8 +361,8 @@ async function submit(btnId, stId, buildForm, url, downloadName) {
     if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Erro'); }
     const blob = await res.blob();
     const disp = res.headers.get('Content-Disposition') || '';
-    const match = disp.match(/filename="?([^"]+)"?/);
-    const name = match ? match[1] : downloadName;
+    const match = disp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    const name = match ? match[1].replace(/['"]/g, '') : downloadName;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -363,28 +388,20 @@ document.getElementById('btn-pdfa').addEventListener('click', () => {
   }, `/convert?level=${level}`, 'arquivo_pdfa.pdf');
 });
 
-// Imagem → PDF
+// Imagem → PDF / PDF/A
 document.getElementById('btn-img2pdf').addEventListener('click', () => {
+  const pdfa = document.querySelector('input[name="img-format"]:checked').value;
+  const name = pdfa === '0' ? 'imagens.pdf' : `imagens_PDFA-${pdfa}b.pdf`;
   submit('btn-img2pdf', 'st-img2pdf', () => {
     const fd = new FormData();
-    Array.from(document.getElementById('file-img2pdf').files).forEach(f => fd.append('files', f));
+    imgFiles.forEach(f => fd.append('files', f));
     return fd;
-  }, '/image-to-pdf', 'imagens.pdf');
-});
-
-// Imagem → PDF/A
-document.getElementById('btn-img2pdfa').addEventListener('click', () => {
-  const level = document.querySelector('input[name="img-pdfa-level"]:checked').value;
-  submit('btn-img2pdfa', 'st-img2pdfa', () => {
-    const fd = new FormData();
-    Array.from(document.getElementById('file-img2pdfa').files).forEach(f => fd.append('files', f));
-    return fd;
-  }, `/image-to-pdfa?level=${level}`, 'imagens_pdfa.pdf');
+  }, `/image-to-pdf?pdfa=${pdfa}`, name);
 });
 
 // PDF → Imagem
 document.getElementById('btn-pdf2img').addEventListener('click', () => {
-  const fmt = document.getElementById('img-format').value;
+  const fmt = document.getElementById('img-out-format').value;
   submit('btn-pdf2img', 'st-pdf2img', () => {
     const fd = new FormData();
     fd.append('file', document.getElementById('file-pdf2img').files[0]);
@@ -392,66 +409,8 @@ document.getElementById('btn-pdf2img').addEventListener('click', () => {
   }, `/pdf-to-image?format=${fmt}`, `paginas.${fmt}`);
 });
 
-// Juntar PDFs — list manager
-const mergeFiles = [];
-const mergeList  = document.getElementById('merge-list');
-const mergeBtn   = document.getElementById('btn-merge');
-const mergeInput = document.getElementById('file-merge-add');
-
-function renderMergeList() {
-  mergeList.innerHTML = '';
-  mergeFiles.forEach((file, i) => {
-    const item = document.createElement('div');
-    item.className = 'merge-item';
-    item.draggable = true;
-    item.dataset.index = i;
-    item.innerHTML = `
-      <span class="drag-handle">⠿</span>
-      <span class="merge-num">${i + 1}.</span>
-      <span class="merge-name" title="${file.name}">${file.name}</span>
-      <button class="merge-remove" title="Remover">×</button>`;
-
-    item.querySelector('.merge-remove').addEventListener('click', () => {
-      mergeFiles.splice(i, 1);
-      renderMergeList();
-    });
-
-    // Drag to reorder
-    item.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', i);
-      setTimeout(() => item.classList.add('dragging'), 0);
-    });
-    item.addEventListener('dragend', () => item.classList.remove('dragging'));
-    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
-    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-    item.addEventListener('drop', e => {
-      e.preventDefault();
-      item.classList.remove('drag-over');
-      const from = parseInt(e.dataTransfer.getData('text/plain'));
-      const to = i;
-      if (from !== to) {
-        const [moved] = mergeFiles.splice(from, 1);
-        mergeFiles.splice(to, 0, moved);
-        renderMergeList();
-      }
-    });
-
-    mergeList.appendChild(item);
-  });
-  mergeBtn.disabled = mergeFiles.length < 2;
-  document.getElementById('merge-hint').style.display = mergeFiles.length >= 2 ? 'block' : 'none';
-}
-
-mergeInput.addEventListener('change', () => {
-  if (mergeInput.files[0]) {
-    mergeFiles.push(mergeInput.files[0]);
-    mergeInput.value = '';
-    renderMergeList();
-  }
-});
-
-mergeBtn.addEventListener('click', () => {
-  if (mergeFiles.length < 2) return;
+// Juntar PDFs
+document.getElementById('btn-merge').addEventListener('click', () => {
   const pdfa = document.querySelector('input[name="merge-format"]:checked').value;
   const name = pdfa === '0' ? 'unificado.pdf' : `unificado_PDFA-${pdfa}b.pdf`;
   submit('btn-merge', 'st-merge', () => {
