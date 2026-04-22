@@ -255,6 +255,23 @@
     <label class="btn-add" for="file-merge-add">＋ Adicionar PDF</label>
     <div id="merge-list"></div>
     <p class="info" id="merge-hint" style="display:none">Arraste os itens para reordenar</p>
+    <div class="options" style="margin-top:1rem">
+      <label>Formato de saída</label>
+      <div class="radio-group" style="flex-wrap:wrap">
+        <label class="radio-option">
+          <input type="radio" name="merge-format" value="0" checked />
+          <div><div class="opt-title">PDF comum</div><div class="opt-desc">Sem conversão</div></div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="merge-format" value="1" />
+          <div><div class="opt-title">PDF/A-1b</div><div class="opt-desc">Máxima compatibilidade</div></div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="merge-format" value="2" />
+          <div><div class="opt-title">PDF/A-2b</div><div class="opt-desc">Suporta transparências</div></div>
+        </label>
+      </div>
+    </div>
     <button class="btn" id="btn-merge" disabled style="margin-top:1rem">Juntar PDFs</button>
     <div class="status" id="st-merge"></div>
   </div>
@@ -435,11 +452,13 @@ mergeInput.addEventListener('change', () => {
 
 mergeBtn.addEventListener('click', () => {
   if (mergeFiles.length < 2) return;
+  const pdfa = document.querySelector('input[name="merge-format"]:checked').value;
+  const name = pdfa === '0' ? 'unificado.pdf' : `unificado_PDFA-${pdfa}b.pdf`;
   submit('btn-merge', 'st-merge', () => {
     const fd = new FormData();
     mergeFiles.forEach(f => fd.append('files', f));
     return fd;
-  }, '/merge-pdf', 'unificado.pdf');
+  }, `/merge-pdf?pdfa=${pdfa}`, name);
 });
 </script>
 </body>

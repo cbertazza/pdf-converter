@@ -174,12 +174,16 @@ async def pdf_to_image(file: UploadFile = File(...), format: str = "jpg"):
 
 
 @app.post("/merge-pdf")
-async def merge_pdf(files: List[UploadFile] = File(...)):
+async def merge_pdf(files: List[UploadFile] = File(...), pdfa: int = 0):
+    # pdfa: 0 = PDF comum, 1 = PDF/A-1b, 2 = PDF/A-2b
     if len(files) < 2:
         raise HTTPException(400, "Envie pelo menos 2 PDFs.")
+    if pdfa not in (0, 1, 2):
+        raise HTTPException(400, "pdfa deve ser 0, 1 ou 2.")
 
     temps = []
-    out = new_path("_merged.pdf")
+    merged = new_path("_merged.pdf")
+    out = new_path("_out.pdf") if pdfa else merged
     try:
         writer = PdfWriter()
         for f in files:
@@ -189,10 +193,22 @@ async def merge_pdf(files: List[UploadFile] = File(...)):
             tmp.write_bytes(await f.read())
             temps.append(tmp)
             writer.append(str(tmp))
-        with open(out, "wb") as fp:
+        with open(merged, "wb") as fp:
             writer.write(fp)
-        return FileResponse(out, media_type="application/pdf", filename="unificado.pdf")
+
+        if pdfa:
+            ok, msg = run_pdfa(merged, out, pdfa)
+            if not ok:
+                raise HTTPException(500, f"Falha na conversão PDF/A: {msg[:800]}")
+            suffix = f"_PDFA-{pdfa}b"
+        else:
+            suffix = ""
+
+        filename = f"unificado{suffix}.pdf"
+        return FileResponse(out, media_type="application/pdf", filename=filename)
     finally:
         for t in temps:
             if t.exists():
                 t.unlink()
+        if pdfa and merged.exists():
+            merged.unlink()
