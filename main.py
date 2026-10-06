@@ -10,7 +10,10 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
+from pillow_heif import register_heif_opener
 from pypdf import PdfWriter
+
+register_heif_opener()
 
 app = FastAPI(title="Conversor de Arquivos")
 
@@ -20,7 +23,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 TEMP_DIR = Path(tempfile.gettempdir()) / "pdf_converter"
 TEMP_DIR.mkdir(exist_ok=True)
 
-ALLOWED_IMAGES = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
+ALLOWED_IMAGES = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp", ".heic", ".heif"}
 
 
 def new_path(suffix: str) -> Path:
